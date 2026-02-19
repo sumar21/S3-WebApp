@@ -1,0 +1,5 @@
+{
+  "name": "S3App-Desktop",
+  "description": "A medical management application featuring login, calendar scheduling, and user configuration, modeled after the reference videoS3",
+  "requestFramePermissions": []
+}
