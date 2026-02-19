@@ -1,77 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>S3</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: {
-              DEFAULT: '#135D54',
-              hover: '#0e453e',
-              light: 'rgba(19, 93, 84, 0.1)',
-              foreground: '#ffffff'
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MedCover</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#135D54',
+                hover: '#0e453e',
+                light: 'rgba(19, 93, 84, 0.1)',
+                foreground: '#ffffff'
+              },
+              secondary: {
+                DEFAULT: '#f3f4f6', // gray-100
+                foreground: '#111827' // gray-900
+              }
             },
-            secondary: {
-              DEFAULT: '#f3f4f6', // gray-100
-              foreground: '#111827' // gray-900
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
             }
-          },
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
           }
         }
       }
-    }
-  </script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --background: 0 0% 100%;
-      --foreground: 222.2 84% 4.9%;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #F8F9FB;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
-
-    @keyframes comboboxFadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(-4px) scale(0.98);
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
       }
-
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+      
+      body { 
+        font-family: 'Inter', sans-serif; 
+        background-color: #F8F9FB;
+        -webkit-font-smoothing: antialiased;
       }
-    }
-  </style>
+      
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
   <script type="importmap">
 {
   "imports": {
@@ -82,12 +56,10 @@
   }
 }
 </script>
-  <link rel="stylesheet" href="/index.css">
+<link rel="stylesheet" href="/index.css">
 </head>
-
-<body>
-  <div id="root"></div>
+  <body>
+    <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
-
 </html>
