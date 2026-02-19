@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Login } from './components/Login';
-import { Sidebar } from './components/Sidebar';
-import { CalendarView } from './components/CalendarView';
-import { ConfigView } from './components/ConfigView';
-import { MobileView } from './components/MobileView';
-import { AbsencesView } from './components/AbsencesView';
-import { Loader } from './components/ui/Loader';
-import { ViewState, AuthUser } from './types';
+import { Login } from './Login';
+import { Sidebar } from './Sidebar';
+import { CalendarView } from './CalendarView';
+import { ConfigView } from './ConfigView';
+import { MobileView } from './MobileView';
+import { AbsencesView } from './AbsencesView';
+import { Loader } from './ui/Loader';
+import { ViewState, AuthUser } from '../types';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -19,9 +19,9 @@ const App: React.FC = () => {
     setIsLoading(true);
     // Simulate loading time for smoother UX transition
     setTimeout(() => {
-        setCurrentView(view);
-        setIsLoading(false);
-    }, 1200); 
+      setCurrentView(view);
+      setIsLoading(false);
+    }, 1200);
   };
 
   const handleLogin = (user: AuthUser) => {
@@ -42,18 +42,18 @@ const App: React.FC = () => {
   const hasOnlyMobileAccess = currentUser.access.includes('Mobile') && !hasDesktopAccess;
 
   if (hasOnlyMobileAccess) {
-      return <MobileView user={currentUser} onLogout={handleLogout} />;
+    return <MobileView user={currentUser} onLogout={handleLogout} />;
   }
 
   // Default Desktop Layout
   return (
     <div className="flex h-screen w-full bg-[#F8F9FB] font-sans relative">
-      <Sidebar 
-        currentView={currentView} 
-        onNavigate={handleNavigate} 
-        onLogout={handleLogout} 
+      <Sidebar
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        onLogout={handleLogout}
       />
-      
+
       <main className="flex-1 overflow-hidden relative">
         {currentView === 'calendar' && <CalendarView />}
         {currentView === 'absences' && <AbsencesView user={currentUser} />}
@@ -63,7 +63,7 @@ const App: React.FC = () => {
       {/* Global Loading Overlay */}
       {isLoading && (
         <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-md flex items-center justify-center transition-all duration-300">
-             <Loader text="Preparando módulo..." />
+          <Loader text="Preparando módulo..." />
         </div>
       )}
     </div>

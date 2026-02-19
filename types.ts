@@ -24,6 +24,7 @@ export interface User {
   email?: string;
   service?: string;
   role?: string;
+  status?: string;
 }
 
 export interface Doctor {
