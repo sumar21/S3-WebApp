@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, LogOut, RotateCw } from 'lucide-react';
+import { ArrowLeft, LogOut, RotateCw, CheckCircle2 } from 'lucide-react';
 import { AbsencesView } from './AbsencesView';
 import { AuthUser } from '../types';
 import { HomeDashboard } from './mobile/HomeDashboard';
@@ -39,9 +39,14 @@ export const MobileView: React.FC<MobileViewProps> = ({ user, onLogout }) => {
     const [isFetchingUserReplacements, setIsFetchingUserReplacements] = useState(false);
     const [isFetchingUserAbsences, setIsFetchingUserAbsences] = useState(false);
 
+    const [errorReplacements, setErrorReplacements] = useState(false);
+    const [errorUserReplacements, setErrorUserReplacements] = useState(false);
+    const [errorUserAbsences, setErrorUserAbsences] = useState(false);
+
     const [replacementToConfirm, setReplacementToConfirm] = useState<any | null>(null);
     const [loadingAction, setLoadingAction] = useState(false);
     const [replacementToCancel, setReplacementToCancel] = useState<any | null>(null);
+    const [successTakeModal, setSuccessTakeModal] = useState(false);
 
     const monthsList = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
@@ -63,16 +68,20 @@ export const MobileView: React.FC<MobileViewProps> = ({ user, onLogout }) => {
 
     const fetchAvailableReplacements = async (tab: string) => {
         setIsFetchingReplacements(true);
+        setAvailableReplacements([]);
+        setErrorReplacements(false);
         try {
             const response = await fetch(REPLACEMENT_ENDPOINTS[tab], {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ Servicio_AS: user.service || 'General', IDuser: String(user.id) }),
             });
+            if (!response.ok) throw new Error("Network response was not ok");
             const result = await response.json();
             setAvailableReplacements(result?.data || []);
         } catch (error) {
             console.error("Error fetching available replacements:", error);
+            setErrorReplacements(true);
             setAvailableReplacements([]);
         } finally {
             setIsFetchingReplacements(false);
@@ -81,16 +90,19 @@ export const MobileView: React.FC<MobileViewProps> = ({ user, onLogout }) => {
 
     const fetchUserReplacements = async () => {
         setIsFetchingUserReplacements(true);
+        setErrorUserReplacements(false);
         try {
             const response = await fetch(USER_REPLACEMENTS_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ IDuser: String(user.id) }),
             });
+            if (!response.ok) throw new Error("Network response was not ok");
             const result = await response.json();
             setUserReplacements(result?.data || []);
         } catch (error) {
             console.error("Error fetching user replacements:", error);
+            setErrorUserReplacements(true);
             setUserReplacements([]);
         } finally {
             setIsFetchingUserReplacements(false);
@@ -99,16 +111,20 @@ export const MobileView: React.FC<MobileViewProps> = ({ user, onLogout }) => {
 
     const fetchUserAbsences = async () => {
         setIsFetchingUserAbsences(true);
+        setErrorUserAbsences(false);
         try {
             const response = await fetch(USER_ABSENCES_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ IDuser: String(user.id) }),
             });
+            if (!response.ok) throw new Error("Network response was not ok");
             const result = await response.json();
             setUserAbsences(result?.data || []);
         } catch (error) {
-            setIsFetchingUserAbsences(false);
+            console.error("Error fetching user absences:", error);
+            setErrorUserAbsences(true);
+            setUserAbsences([]);
         } finally {
             setIsFetchingUserAbsences(false);
         }
@@ -118,6 +134,11 @@ export const MobileView: React.FC<MobileViewProps> = ({ user, onLogout }) => {
         if (currentScreen === 'home') {
             fetchUserReplacements();
             fetchUserAbsences();
+        }
+    }, [currentScreen, user.id]);
+
+    useEffect(() => {
+        if (currentScreen === 'home') {
             fetchAvailableReplacements(homeTab);
         }
     }, [currentScreen, homeTab, user.id]);
@@ -174,8 +195,16 @@ export const MobileView: React.FC<MobileViewProps> = ({ user, onLogout }) => {
 
             if (response.ok) {
                 setReplacementToConfirm(null);
-                handleRefresh();
+                setSuccessTakeModal(true);
+                setTimeout(() => {
+                    handleRefresh();
+                }, 1500);
+            } else {
+                alert("Hubo un error al procesar el reemplazo. Por favor, intente nuevamente.");
             }
+        } catch (error) {
+            console.error("Error taking replacement:", error);
+            alert("Error de conexión al procesar el reemplazo.");
         } finally {
             setLoadingAction(false);
         }
@@ -229,6 +258,8 @@ export const MobileView: React.FC<MobileViewProps> = ({ user, onLogout }) => {
                         <ReplacementsList
                             replacements={userReplacements}
                             isFetching={isFetchingUserReplacements}
+                            error={errorUserReplacements}
+                            onRetry={fetchUserReplacements}
                             onCancel={setReplacementToCancel}
                             checkCanCancel={checkCanCancelReplacement}
                         />
@@ -265,11 +296,16 @@ export const MobileView: React.FC<MobileViewProps> = ({ user, onLogout }) => {
             <div className="flex-1 overflow-y-auto">
                 <HomeDashboard
                     firstName={firstName}
-                    pendingAbsencesCount={userAbsences.length}
+                    totalAbsencesCount={userAbsences.length}
+                    pendingAbsencesCount={userAbsences.filter(a => a.Status_AS === 'Pendiente').length}
                     activeReplacementsCount={userReplacements.length}
                     nextShift={nextShift}
                     isFetchingUserReplacements={isFetchingUserReplacements}
                     isFetchingReplacements={isFetchingReplacements}
+                    errorUserReplacements={errorUserReplacements}
+                    errorReplacements={errorReplacements}
+                    onRetryUserReplacements={fetchUserReplacements}
+                    onRetryReplacements={() => fetchAvailableReplacements(homeTab)}
                     availableReplacements={availableReplacements}
                     homeTab={homeTab}
                     setHomeTab={setHomeTab}
@@ -277,6 +313,7 @@ export const MobileView: React.FC<MobileViewProps> = ({ user, onLogout }) => {
                     onTakeReplacement={setReplacementToConfirm}
                     parseDate={parseDate}
                     monthsList={monthsList}
+                    serviceName={user.service}
                 />
             </div>
 
@@ -299,6 +336,22 @@ export const MobileView: React.FC<MobileViewProps> = ({ user, onLogout }) => {
                     </div>
                 </div>
             </Modal>
+
+            {successTakeModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl w-full max-w-sm p-8 flex flex-col items-center text-center shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center mb-6 border border-green-100">
+                            <CheckCircle2 size={40} className="text-green-600" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2">¡Turno Asignado!</h3>
+                        <p className="text-gray-500 text-sm mb-8 leading-relaxed">Has tomado el reemplazo correctamente. Ahora puedes verlo en tu historial.</p>
+                        <Button className="w-full bg-[#135D54] hover:bg-[#0e453e] h-12 text-base shadow-lg shadow-[#135D54]/20" onClick={() => {
+                            setSuccessTakeModal(false);
+                            handleRefresh();
+                        }}>Excelente</Button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

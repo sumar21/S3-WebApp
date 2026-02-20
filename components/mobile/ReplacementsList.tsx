@@ -1,10 +1,13 @@
 
 import React from 'react';
 import { Calendar, Clock, MapPin, User as UserIcon, Trash2, AlertCircle, History } from 'lucide-react';
+import { ErrorMessage } from '../ui/ErrorMessage';
 
 interface ReplacementsListProps {
     replacements: any[];
     isFetching: boolean;
+    error?: boolean;
+    onRetry?: () => void;
     onCancel: (item: any) => void;
     checkCanCancel: (dateStr: string, franjaStr: string) => boolean;
 }
@@ -12,6 +15,8 @@ interface ReplacementsListProps {
 export const ReplacementsList: React.FC<ReplacementsListProps> = ({
     replacements,
     isFetching,
+    error,
+    onRetry,
     onCancel,
     checkCanCancel
 }) => {
@@ -20,6 +25,17 @@ export const ReplacementsList: React.FC<ReplacementsListProps> = ({
             <div className="flex flex-col items-center justify-center py-20">
                 <div className="w-8 h-8 border-4 border-[#135D54] border-t-transparent rounded-full animate-spin"></div>
                 <p className="text-gray-500 text-sm mt-4">Cargando reemplazos...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-200 shadow-sm">
+                <ErrorMessage
+                    message="No pudimos cargar la lista de tus reemplazos."
+                    onRetry={onRetry || (() => { })}
+                />
             </div>
         );
     }

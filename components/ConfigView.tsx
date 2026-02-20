@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Search, ChevronDown, SquarePen, Trash2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Loader } from './ui/Loader';
+import { ErrorMessage } from './ui/ErrorMessage';
 import { User, NewUserForm } from '../types';
 import { UserFormModal } from './config/UserFormModal';
 import { DeleteUserModal } from './config/DeleteUserModal';
@@ -14,6 +15,7 @@ export const ConfigView: React.FC = () => {
   const [showAddUser, setShowAddUser] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -27,11 +29,12 @@ export const ConfigView: React.FC = () => {
 
   const [users, setUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState<NewUserForm>({
-    name: '', surname: '', password: '', type: '', birthDate: '', dni: '', email: '', service: '', role: '', sector: ''
+    name: '', surname: '', password: '', type: '', birthDate: '', dni: '', email: '', service: '', role: '', sector: '', status: ''
   });
 
   const fetchUsers = async () => {
     setIsFetching(true);
+    setFetchError(false);
     try {
       const response = await fetch('https://default20435c5a4f504349a09a856bdf1f70.49.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/6a07ae950e5b42e0af0673e2a03e376b/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=T6xYIqivUbpY4DaWw1lHE9C7Jwz7IK0sPPcszU6o4xg', {
         method: 'POST',
@@ -39,6 +42,7 @@ export const ConfigView: React.FC = () => {
         body: JSON.stringify({}),
       });
 
+      if (!response.ok) throw new Error("Network response was not ok");
       const result = await response.json();
 
       if (result && result.data && Array.isArray(result.data)) {
@@ -53,12 +57,14 @@ export const ConfigView: React.FC = () => {
           email: item.Correo_US || '',
           service: item.Servicio_US || '',
           role: item.TipoPerfil_US || '',
-          status: item.Status_USR || ''
+          status: item.Status_USR || item.Status_US || '',
+          password: item.Contrasena_USR || item.Contrasena_US || ''
         }));
         setUsers(mappedUsers);
       }
     } catch (error) {
       console.error("Error fetching users:", error);
+      setFetchError(true);
     } finally {
       setIsFetching(false);
     }
@@ -152,7 +158,8 @@ export const ConfigView: React.FC = () => {
       email: '',
       service: '',
       role: '',
-      sector: ''
+      sector: '',
+      status: 'Pendiente'
     });
     setFileName(null);
     setFileContent(null);
@@ -176,14 +183,15 @@ export const ConfigView: React.FC = () => {
     setFormData({
       name: user.name,
       surname: user.surname,
-      password: generateRandomCode(),
       type: user.type,
       birthDate: formattedDate,
       dni: user.dni || '',
       email: user.email || '',
       service: user.service || '',
       role: user.role === 'RH' ? 'User' : user.role || '',
-      sector: user.sector
+      sector: user.sector,
+      password: user.password || '',
+      status: user.status || ''
     });
 
     setFileName(null);
@@ -198,77 +206,13 @@ export const ConfigView: React.FC = () => {
   const handleClose = () => {
     setShowAddUser(false);
     setEditingId(null);
-    setFormData({ name: '', surname: '', password: '', type: '', birthDate: '', dni: '', email: '', service: '', role: '', sector: '' });
+    setFormData({ name: '', surname: '', password: '', type: '', birthDate: '', dni: '', email: '', service: '', role: '', sector: '', status: '' });
     setFileName(null);
     setFileContent(null);
     if (cvPdfUrl) {
       URL.revokeObjectURL(cvPdfUrl);
     }
     setCvPdfUrl(null);
-  };
-
-  const handleSave = async () => {
-    setLoading(true);
-    let appAccess = '';
-    if (formData.role === 'Admin') appAccess = 'Desktop;Mobile';
-    else if (formData.role === 'Medico') appAccess = 'Mobile';
-    else if (formData.role === 'User') appAccess = 'Desktop';
-
-    let formattedBirthDate = formData.birthDate;
-    if (formData.birthDate && formData.birthDate.includes('-')) {
-      const parts = formData.birthDate.split('-');
-      if (parts.length === 3) formattedBirthDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
-
-    const generatedUser = (formData.name && formData.surname)
-      ? `${formData.name.substring(0, 3).toLowerCase()}${formData.surname.toLowerCase()}`
-      : '';
-
-    const payload: any = {
-      DNI: formData.dni,
-      Sector: formData.sector,
-      Correo: formData.email,
-      FechaNac: formattedBirthDate,
-      TipoM: formData.type,
-      Aplicacion: appAccess,
-      Contrasena: formData.password,
-      TipoPerfil: formData.role === 'User' ? 'RH' : formData.role,
-      ConcatLog: generatedUser,
-      ConcatName: `${formData.surname}, ${formData.name}`,
-      Nombre: formData.name,
-      Apellido: formData.surname,
-      Servicio: formData.service
-    };
-
-    // Solo enviamos el ID si estamos editando
-    if (editingId) {
-      payload.ID = parseInt(editingId);
-    }
-
-    // Solo enviamos el archivo si se cargó uno nuevo
-    if (fileContent) {
-      payload.FileName = fileName;
-      payload.FileContent = fileContent;
-    }
-
-    try {
-      const response = await fetch('https://default20435c5a4f504349a09a856bdf1f70.49.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/a43b8cdf5dbf4f6f83e4956eaacb3d5d/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=rl5wn8Q3s4fg2pLzpD0HoS1uurNrA4rBeQt6-FIwwUQ', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        await fetchUsers();
-        handleClose();
-      } else {
-        console.error("Error saving user:", await response.text());
-      }
-    } catch (error) {
-      console.error("Network error saving user:", error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleDeleteClick = (user: User) => setUserToDelete(user);
@@ -341,6 +285,13 @@ export const ConfigView: React.FC = () => {
         {isFetching ? (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-sm">
             <Loader text="Cargando usuarios..." />
+          </div>
+        ) : fetchError ? (
+          <div className="flex-1 flex items-center justify-center p-8 bg-white rounded-xl">
+            <ErrorMessage
+              message="No pudimos cargar la lista de usuarios. Verifica tu conexión e intenta de nuevo."
+              onRetry={fetchUsers}
+            />
           </div>
         ) : (
           <div className="overflow-x-auto flex-1">
@@ -423,10 +374,10 @@ export const ConfigView: React.FC = () => {
         formData={formData}
         onInputChange={handleInputChange}
         onFieldChange={handleFieldChange}
-        onSave={handleSave}
-        loading={loading}
+        onSuccess={fetchUsers}
         fileInputRef={fileInputRef}
         fileName={fileName}
+        fileContent={fileContent}
         onFileChange={handleFileChange}
         onFetchCV={fetchCV}
         isLoadingCV={isLoadingCV}

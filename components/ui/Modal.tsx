@@ -14,7 +14,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
   if (!isOpen) return null;
 
   return (
-    <div className={`fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4`} style={{ zIndex }} onClick={onClose}>
+    <div className={`fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 sm:p-4`} style={{ zIndex }} onClick={onClose}>
       <div
         className={`relative w-full ${width} border bg-white p-4 sm:p-6 shadow-lg duration-200 rounded-lg sm:rounded-lg max-h-[90vh] flex flex-col`}
         style={{ zIndex: zIndex + 1, animation: 'comboboxFadeIn 0.2s ease-out' }}

@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Loader2, ArrowLeft, RotateCw, LogOut, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, RotateCw, LogOut, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Modal } from './ui/Modal';
 import { AuthUser } from '../types';
 import { AbsenceForm } from './absences/AbsenceForm';
 import { AbsenceHistory } from './absences/AbsenceHistory';
+import { ErrorMessage } from './ui/ErrorMessage';
 
 interface AbsencesViewProps {
   user: AuthUser;
@@ -25,6 +26,7 @@ export const AbsencesView: React.FC<AbsencesViewProps> = ({ user, onBack, onLogo
   const [activeTab, setActiveTab] = useState<AbsencesTab>('cargar');
   const [userAbsences, setUserAbsences] = useState<any[]>([]);
   const [isFetching, setIsFetching] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   // Modals state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -33,6 +35,7 @@ export const AbsencesView: React.FC<AbsencesViewProps> = ({ user, onBack, onLogo
   const [absenceToCancel, setAbsenceToCancel] = useState<any | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSameDayModal, setShowSameDayModal] = useState(false);
 
   // Filters State
   const [showFilters, setShowFilters] = useState(false);
@@ -56,12 +59,14 @@ export const AbsencesView: React.FC<AbsencesViewProps> = ({ user, onBack, onLogo
 
   const fetchAbsences = async () => {
     setIsFetching(true);
+    setFetchError(false);
     try {
       const response = await fetch(USER_ABSENCES_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ IDuser: String(user.id) }),
       });
+      if (!response.ok) throw new Error("Network response was not ok");
       const result = await response.json();
       if (result && result.data && Array.isArray(result.data)) {
         setUserAbsences(result.data);
@@ -70,6 +75,7 @@ export const AbsencesView: React.FC<AbsencesViewProps> = ({ user, onBack, onLogo
       }
     } catch (error) {
       console.error("Error fetching absences:", error);
+      setFetchError(true);
       setUserAbsences([]);
     } finally {
       setIsFetching(false);
@@ -195,6 +201,20 @@ export const AbsencesView: React.FC<AbsencesViewProps> = ({ user, onBack, onLogo
     }
   };
 
+  const handleReport = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+
+    if (form.dateFrom === todayStr) {
+      setShowSameDayModal(true);
+    } else {
+      setShowConfirmModal(true);
+    }
+  };
+
   const confirmCancelAbsence = async () => {
     if (!absenceToCancel) return;
     setIsCancelling(true);
@@ -276,7 +296,14 @@ export const AbsencesView: React.FC<AbsencesViewProps> = ({ user, onBack, onLogo
           </div>
 
           {activeTab === 'cargar' ? (
-            <AbsenceForm form={form} setForm={setForm} isSubmitting={isSubmitting} onReport={() => setShowConfirmModal(true)} />
+            <AbsenceForm form={form} setForm={setForm} isSubmitting={isSubmitting} onReport={handleReport} />
+          ) : fetchError ? (
+            <div className="flex-1 flex items-center justify-center p-4">
+              <ErrorMessage
+                message="No pudimos cargar tus ausencias. Por favor, intenta de nuevo."
+                onRetry={fetchAbsences}
+              />
+            </div>
           ) : (
             <AbsenceHistory
               absences={filteredAbsences}
@@ -293,6 +320,29 @@ export const AbsencesView: React.FC<AbsencesViewProps> = ({ user, onBack, onLogo
           )}
         </div>
       </div>
+
+      <Modal
+        isOpen={showSameDayModal}
+        onClose={() => setShowSameDayModal(false)}
+        title="Atención"
+        width="max-w-sm"
+      >
+        <div className="space-y-6 pt-2">
+          <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex gap-3 text-sm text-gray-700">
+            <AlertCircle className="text-amber-500 shrink-0" size={24} />
+            <p>
+              El reporte de ausencia para el <span className="font-bold">mismo día</span> debe realizarse con al menos <span className="font-bold">un día de anticipación</span> a través del sistema.
+              <br /><br />
+              Por favor, comuníquese con su supervisor para coordinar esta inasistencia.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button className="w-full bg-[#135D54] hover:bg-[#0e453e]" onClick={() => setShowSameDayModal(false)}>
+              Entendido
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal isOpen={showConfirmModal} onClose={() => !isSubmitting && setShowConfirmModal(false)} title="Confirmar reporte" width="max-w-sm">
         <div className="space-y-6 pt-2">

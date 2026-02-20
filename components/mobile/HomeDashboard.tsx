@@ -2,14 +2,20 @@
 import React from 'react';
 import { Calendar, Briefcase, HelpCircle, History, CalendarOff, CalendarCheck, ArrowRight, RefreshCw, Loader2, MapPin, Clock, User as UserIcon, Stethoscope } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { ErrorMessage } from '../ui/ErrorMessage';
 
 interface HomeDashboardProps {
     firstName: string;
+    totalAbsencesCount: number;
     pendingAbsencesCount: number;
     activeReplacementsCount: number;
     nextShift: any | null;
     isFetchingUserReplacements: boolean;
     isFetchingReplacements: boolean;
+    errorUserReplacements?: boolean;
+    errorReplacements?: boolean;
+    onRetryUserReplacements?: () => void;
+    onRetryReplacements?: () => void;
     availableReplacements: any[];
     homeTab: 'Hoy' | 'Mañana' | 'Todos';
     setHomeTab: (tab: 'Hoy' | 'Mañana' | 'Todos') => void;
@@ -17,22 +23,29 @@ interface HomeDashboardProps {
     onTakeReplacement: (item: any) => void;
     parseDate: (str: string) => Date;
     monthsList: string[];
+    serviceName?: string;
 }
 
 export const HomeDashboard: React.FC<HomeDashboardProps> = ({
     firstName,
+    totalAbsencesCount,
     pendingAbsencesCount,
     activeReplacementsCount,
     nextShift,
     isFetchingUserReplacements,
     isFetchingReplacements,
+    errorUserReplacements,
+    errorReplacements,
+    onRetryUserReplacements,
+    onRetryReplacements,
     availableReplacements,
     homeTab,
     setHomeTab,
     onNavigate,
     onTakeReplacement,
     parseDate,
-    monthsList
+    monthsList,
+    serviceName = 'General'
 }) => {
     return (
         <div className="p-4 md:p-8 w-full max-w-7xl mx-auto flex flex-col gap-6 md:gap-8">
@@ -57,12 +70,12 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                                 </div>
                             </div>
                             <div className="text-left w-full">
-                                <span className={`block font-bold text-2xl md:text-4xl mb-0.5 md:mb-1 ${pendingAbsencesCount > 0 ? 'text-[#E11D48]' : 'text-gray-400'}`}>
-                                    {pendingAbsencesCount}
+                                <span className={`block font-bold text-2xl md:text-4xl mb-0.5 md:mb-1 ${totalAbsencesCount > 0 ? 'text-gray-900' : 'text-gray-400'}`}>
+                                    {totalAbsencesCount}
                                 </span>
                                 <span className="block font-medium text-gray-900 text-sm md:text-base">Ausencias</span>
-                                <span className="text-[11px] text-gray-500 md:text-sm">
-                                    {pendingAbsencesCount === 0 ? 'Libre de ausencias' : `${pendingAbsencesCount} ${pendingAbsencesCount === 1 ? 'pendiente' : 'pendientes'}`}
+                                <span className={`${pendingAbsencesCount > 0 ? 'text-red-500 font-bold' : 'text-gray-500'} text-[11px] md:text-sm`}>
+                                    {pendingAbsencesCount} {pendingAbsencesCount === 1 ? 'pendiente' : 'pendientes'}
                                 </span>
                             </div>
                         </button>
@@ -104,7 +117,18 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
                         {isFetchingUserReplacements ? (
                             <div className="flex items-center justify-center py-10 bg-gray-50 rounded-xl border border-gray-100">
-                                <Loader2 className="w-6 h-6 text-[#135D54] animate-spin" />
+                                <span className="flex flex-col items-center gap-2">
+                                    <Loader2 className="w-6 h-6 text-[#135D54] animate-spin" />
+                                    <span className="text-xs text-gray-400 font-medium">Actualizando...</span>
+                                </span>
+                            </div>
+                        ) : errorUserReplacements ? (
+                            <div className="py-6">
+                                <ErrorMessage
+                                    message="No pudimos cargar tus compromisos."
+                                    onRetry={onRetryUserReplacements || (() => { })}
+                                    className="bg-transparent border-none p-0 scale-90"
+                                />
                             </div>
                         ) : nextShift ? (
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
@@ -177,6 +201,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                                     <div className="w-6 h-6 border-4 border-[#135D54] border-t-transparent rounded-full animate-spin"></div>
                                     <span className="text-gray-500 text-xs">Buscando...</span>
                                 </div>
+                            ) : errorReplacements ? (
+                                <div className="py-12 px-2">
+                                    <ErrorMessage
+                                        message="Error al buscar reemplazos."
+                                        onRetry={onRetryReplacements || (() => { })}
+                                        className="bg-transparent border-none p-0 scale-90"
+                                    />
+                                </div>
                             ) : availableReplacements.length > 0 ? (
                                 <div className="space-y-4">
                                     {availableReplacements.map((item, idx) => (
@@ -221,7 +253,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                                     </div>
                                     <h4 className="text-lg font-bold text-gray-900 mb-2">Sin reemplazos disponibles</h4>
                                     <p className="text-gray-400 text-xs leading-relaxed max-w-[180px] mx-auto">
-                                        No hay ofertas para {homeTab.toLowerCase()}.
+                                        No hay ofertas para {homeTab.toLowerCase()} en {serviceName}.
                                     </p>
                                 </div>
                             )}

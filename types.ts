@@ -25,6 +25,7 @@ export interface User {
   service?: string;
   role?: string;
   status?: string;
+  password?: string;
 }
 
 export interface Doctor {
@@ -50,4 +51,5 @@ export interface NewUserForm {
   service: string;
   role: string;
   sector: string;
+  status?: string;
 }
